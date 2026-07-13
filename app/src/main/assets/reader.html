@@ -2,237 +2,232 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>小说</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>蛊真人</title>
 <style>
-:root{--bg:#f5f1e8;--text:#2c2c2c;--accent:#8b5a2b;--dim:#999;--bar:rgba(245,241,232,.92);--shadow:rgba(0,0,0,.12)}
-body.night{--bg:#1a1a1a;--text:#c8c3b8;--bar:rgba(26,26,26,.92);--shadow:rgba(0,0,0,.3)}
-body.sepia{--bg:#efe0c0;--text:#4a3520;--bar:rgba(239,224,192,.92);--accent:#6b4218;--shadow:rgba(0,0,0,.1)}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{
-  font-family:"Noto Serif SC","STSong","SimSun",serif;
-  background:var(--bg);color:var(--text);height:100vh;overflow:hidden;
-  user-select:none;-webkit-user-select:none;
-}
-/* Reader area */
-#reader{position:fixed;inset:0;overflow:hidden;cursor:pointer}
-#content{
-  width:100%;max-width:740px;margin:0 auto;
-  padding:env(safe-area-inset-top,28px) 24px 48px;
-  transition:transform .2s ease,font-size 0s
-}
-#content p{
-  font-size:var(--sz,18px);line-height:2.0;text-indent:2em;
-  margin-bottom:.4em;text-align:justify
-}
-/* Tap zones */
-#zones{position:fixed;inset:0;display:flex;z-index:2}
-.z{flex:1;-webkit-tap-highlight-color:transparent;cursor:pointer}
-.z.prev{border-right:1px solid transparent;max-width:30%}
-.z.next{border-left:1px solid transparent;max-width:70%}
-/* Progress bar */
-#bar{position:fixed;bottom:0;left:0;right:0;height:3px;z-index:3;background:transparent}
-#bar div{height:100%;background:var(--accent);transition:width .15s}
-/* Bottom page info */
-#info{
-  position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:5;
-  font-size:12px;color:var(--dim);pointer-events:none;background:var(--bg);
-  padding:2px 14px;border-radius:12px;opacity:.8;white-space:nowrap;transition:opacity .3s
-}
-/* Top bar */
-#topbar{
-  position:fixed;top:0;left:0;right:0;z-index:10;
-  background:var(--bar);backdrop-filter:blur(8px);
-  padding:12px 16px;display:flex;align-items:center;gap:8px;
-  display:none;
-}
-#topbar.show{display:flex}
-#topbar .ttl{flex:1;font-size:14px;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#topbar button{
-  padding:6px 12px;border:1px solid var(--dim);border-radius:6px;
-  background:transparent;color:var(--text);font-size:13px;font-family:inherit
-}
-/* Sidebar */
-#mask{position:fixed;inset:0;z-index:19;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .25s}
-#mask.show{opacity:1;pointer-events:auto}
-#side{
-  position:fixed;top:0;left:-280px;bottom:0;width:280px;z-index:20;
-  background:var(--bg);display:flex;flex-direction:column;
-  transition:left .25s;box-shadow:4px 0 24px var(--shadow);
-}
-#side.open{left:0}
-#side h3{padding:16px;font-size:15px;color:var(--accent);border-bottom:1px solid var(--dim)}
-#side input{margin:8px 12px;padding:8px;border:1px solid var(--dim);border-radius:6px;font-size:13px;background:transparent;color:var(--text);font-family:inherit}
-#side .lst{flex:1;overflow-y:auto}
-#side .it{padding:10px 16px;font-size:14px;border-bottom:1px solid var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
-#side .it.act{background:var(--accent);color:#fff}
-/* Loading */
-#loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99;background:var(--bg);font-size:15px;color:var(--dim);flex-direction:column;gap:12px}
-#loader .spinner{width:24px;height:24px;border:2px solid var(--dim);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-/* Quick guide overlay */
-#guide{position:fixed;inset:0;z-index:50;pointer-events:none;opacity:0;transition:opacity .5s}
+:root{--bg:#f5f1e8;--tx:#2c2c2c;--ac:#8b5a2b;--dm:#9c9c9c}
+body.night{--bg:#1a1a1a;--tx:#c8c3b8;--ac:#c49a6c}
+body.sepia{--bg:#efe0c0;--tx:#4a3520;--ac:#6b4218}
+body{font-family:"Noto Serif SC","STSong","SimSun",serif;background:var(--bg);color:var(--tx);margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;-webkit-user-select:none;transition:background .4s}
+*{-webkit-tap-highlight-color:transparent}
+
+/* ── reader view ── */
+#view{position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
+#pageW{position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:720px;padding:env(safe-area-inset-top,30px) 22px 52px;transition:transform .2s}
+#pageW p{font-size:var(--sz,18px);line-height:2.05;text-indent:2em;margin-bottom:.35em;text-align:justify}
+
+/* ── tap guide ── */
+#guide{pointer-events:none;position:fixed;inset:0;z-index:50;opacity:0;transition:opacity 1.5s}
 #guide.show{opacity:1}
-#guide .label{position:absolute;color:rgba(255,255,255,.5);font-size:28px}
-#guide .l1{left:0;top:50%;transform:translateY(-50%);padding:40px}
-#guide .l2{right:0;top:50%;transform:translateY(-50%);padding:40px}
+#guide span{position:absolute;top:50%;transform:translateY(-50%);color:rgba(139,90,43,.25);font-size:40px;font-weight:bold;transition:opacity .5s}
+#guide s1{left:12%}#guide s2{right:12%}
+
+/* ── bottom info ── */
+#info{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--dm);pointer-events:none}
+
+/* ── top bar ── */
+#head{position:fixed;top:0;left:0;right:0;z-index:10;padding:12px 14px;display:none;align-items:center;gap:8px;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(8px)}
+#head.on{display:flex}
+#head .tt{flex:1;font-size:14px;font-weight:600;color:var(--ac);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#head button{border:1.5px solid var(--dm);border-radius:6px;background:transparent;color:var(--tx);font-size:13px;padding:5px 11px;font-family:inherit}
+
+/* ── sidebar ── */
+#ovl{position:fixed;inset:0;z-index:19;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
+#ovl.on{opacity:1;pointer-events:auto}
+#sdb{position:fixed;top:0;left:0;bottom:0;width:286px;z-index:20;background:var(--bg);transform:translateX(-100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+#sdb.on{transform:translateX(0)}
+#sdb h3{padding:16px;font-size:15px;color:var(--ac);margin:0;border-bottom:1.5px solid var(--dm)}
+#sdb input{margin:10px 12px;padding:8px 10px;border:1.5px solid var(--dm);border-radius:6px;font-size:13px;background:transparent;color:var(--tx);font-family:inherit}
+#sdb .lst{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#sdb .it{padding:10px 16px;font-size:14px;border-bottom:.5px solid var(--dm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+#sdb .it.act{background:var(--ac);color:#fff;font-weight:600}
+
+/* ── loader ── */
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99;background:var(--bg);flex-direction:column;gap:14px;font-size:14px;color:var(--dm)}
+#load .dot{width:22px;height:22px;border:2px solid var(--dm);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><span>加载中</span></div>
+<div id="load"><div class="dot"></div><span>打开中</span></div>
 
-<div id="topbar">
-  <button onclick="openSide()">☰</button>
-  <span class="ttl" id="ttl">蛊真人</span>
-  <button onclick="theme()" id="tb">🌙</button>
-  <button onclick="fs(-1)">A−</button>
-  <button onclick="fs(1)">A+</button>
+<div id="head">
+  <button id="btnMenu" onclick="side(1)">☰</button>
+  <span class="tt" id="chTitle">蛊真人</span>
+  <button onclick="theme()" id="btnTheme">🌙</button>
+  <button onclick="fontSz(-1)">A−</button>
+  <button onclick="fontSz(1)">A+</button>
 </div>
 
-<div id="reader">
-  <div id="content"></div>
-  <div id="zones">
-    <div class="z prev" onclick="go(-1)"></div>
-    <div class="z next" onclick="go(1)"></div>
-  </div>
+<div id="view">
+  <div id="pageW"></div>
 </div>
-<div id="bar"><div></div></div>
-<div id="info">— 1 / 1 —</div>
+<div id="info">1·1</div>
 
 <div id="guide" class="show">
-  <span class="label l1">←</span>
-  <span class="label l2">→</span>
+  <s1>←</s1><s2>→</s2>
 </div>
 
-<div id="mask" onclick="closeSide()"></div>
-<div id="side">
+<div id="ovl" onclick="side(0)"></div>
+<div id="sdb">
   <h3>📖 目录</h3>
-  <input id="sch" placeholder="搜索章节…" oninput="filter()">
+  <input id="sch" placeholder="搜索章节…" oninput="sfilter()">
   <div class="lst" id="lst"></div>
 </div>
 
 <script>
-var DATA=[],cur=0,sz=18,ph=0,pg=0,tot=0,gt=0,tx=0;
+// ── state ──
+var BOOK=[], ci=0, fsz=18, ph=0, pn=0, pi=0;
+var tx=0, swiping=false;
+var headShown=false;
 
-function rd(){
-  if(!window.ANDROID_CHAPTERS_DATA)return setTimeout(rd,50);
-  DATA=window.ANDROID_CHAPTERS_DATA.chapters;
-  var s=localStorage.getItem('gr_p');
-  if(s)cur=parseInt(s);
-  // List
-  var l=document.getElementById('lst');
-  DATA.forEach(function(c,i){
-    var d=document.createElement('div');
-    d.className='it';d.textContent=c.title;
-    d.onclick=function(){sel(i)};
-    l.appendChild(d);
-  });
-  document.getElementById('loader').style.display='none';
-  load(cur);
-  // Restore preferences
-  var t=localStorage.getItem('gr_t')||'0';
-  if(t!='0')document.body.className=['','night','sepia'][parseInt(t)];
-  var f=localStorage.getItem('gr_f')||'18';
-  sz=parseInt(f);document.documentElement.style.setProperty('--sz',sz+'px');
-  // Show tap guide for 2 seconds
+// ── init: poll for injected data ──
+function startup(){
+  if(!window.GH_DATA){setTimeout(startup,30);return}
+  BOOK=window.GH_DATA.chapters;
+  buildList();
+  var s=localStorage.getItem('gr_ci');if(s)ci=parseInt(s);
+  var t=localStorage.getItem('gr_th');if(t)document.body.className=['','night','sepia'][parseInt(t)];
+  var f=localStorage.getItem('gr_fs');if(f){fsz=parseInt(f);document.documentElement.style.setProperty('--sz',fsz+'px')}
+  document.getElementById('load').style.display='none';
+  openChapter(ci);
   setTimeout(function(){document.getElementById('guide').classList.remove('show')},2000);
+  document.getElementById('btnMenu').onclick=function(){side(1)};
 }
+startup();
 
-function load(i){
-  if(i<0||i>=DATA.length)return;cur=i;
-  document.getElementById('ttl').textContent=DATA[i].title;
-  document.title=DATA[i].title;
-  localStorage.setItem('gr_p',i);
-  // Build pages
-  var ps=DATA[i].content.split('\n').filter(function(l){return l.trim();});
-  var h='';ps.forEach(function(p){h+='<p>'+p+'</p>';});
-  document.getElementById('content').innerHTML=h;
-  // Measure and paginate
-  var r=document.getElementById('reader');
-  ph=r.clientHeight;
-  var c=document.getElementById('content');
-  c.style.transform='translateY(0)';
-  tot=Math.max(1,Math.ceil(c.scrollHeight/ph));
-  pg=0;upd();
-  // Highlight list
-  var its=document.querySelectorAll('#side .it');
+// ── chapter ──
+function openChapter(i){
+  if(i<0||i>=BOOK.length)return;
+  ci=i;
+  localStorage.setItem('gr_ci',i);
+  document.getElementById('chTitle').textContent=BOOK[i].title;
+  document.title=BOOK[i].title;
+  // mark list item
+  var its=document.querySelectorAll('#sdb .it');
   for(var j=0;j<its.length;j++)its[j].className='it'+(j===i?' act':'');
+  // build page
+  var body=BOOK[i].content.split('\n').filter(function(l){return l.trim()});
+  var html='';
+  for(var k=0;k<body.length;k++)html+='<p>'+body[k]+'</p>';
+  var w=document.getElementById('pageW');
+  w.innerHTML=html;
+  w.style.transform='translateY(0)';
+  // measure
+  var v=document.getElementById('view');
+  ph=v.clientHeight;
+  pn=Math.max(1,Math.ceil(w.scrollHeight/ph));
+  pi=0;
+  showPage();
 }
 
-function go(d){
-  var n=pg+d;
-  if(n<0||n>=tot){if(d>0)load(cur+1);else if(d<0)load(cur-1);return}
-  pg=n;upd();
+// ── pagination ──
+function nextPage(){
+  if(pi+1>=pn){openChapter(ci+1);return}
+  pi++;showPage();
+}
+function prevPage(){
+  if(pi<=0){if(ci>0)openChapter(ci-1);return}
+  pi--;showPage();
+}
+function showPage(){
+  var w=document.getElementById('pageW');
+  w.style.transform='translateY('+(-pi*ph)+'px)';
+  document.getElementById('info').textContent=(pi+1)+'·'+pn;
 }
 
-function upd(){
-  var c=document.getElementById('content');
-  c.style.transform='translateY('+(-pg*ph)+'px)';
-  document.getElementById('info').textContent=(pg+1)+' / '+tot;
-  document.querySelector('#bar div').style.width=((pg+1)/tot*100)+'%';
-}
-
-// Swipe support
-document.addEventListener('touchstart',function(e){
-  tx=e.touches[0].clientX;
-  gt=0;
-});
+// ── touch & tap ──
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;swiping=true});
+document.addEventListener('touchmove',function(e){swiping=true});
 document.addEventListener('touchend',function(e){
+  if(!swiping)return;
+  swiping=false;
   var dx=e.changedTouches[0].clientX-tx;
   var y=e.changedTouches[0].clientY;
-  if(Math.abs(dx)>40){
-    if(dx<0)go(1);else go(-1);
+  // tap on edges = toggle head
+  if(Math.abs(dx)<10&&(y<window.innerHeight*0.08||y>window.innerHeight*0.9)){
+    headShown=!headShown;
+    document.getElementById('head').className=headShown?'on':'';
+    return;
+  }
+  // swipe horizontal
+  if(Math.abs(dx)>35){
+    if(dx<0)nextPage();else prevPage();
+    return;
+  }
+  // tap
+  if(Math.abs(dx)<10){
+    var x=e.changedTouches[0].clientX;
+    if(x<window.innerWidth*.3)prevPage();else nextPage();
   }
 });
-
-// Tap to toggle topbar
-document.addEventListener('click',function(e){
-  // Don't interfere with tap zone clicks
-  if(Math.abs(gt++)>1)return;
-  var y=e.clientY;
-  if(y<window.innerHeight*0.08||y>window.innerHeight*0.92){
-    document.getElementById('topbar').classList.toggle('show');
-  }
+// click fallback for non-touch devices
+document.getElementById('view').addEventListener('click',function(e){
+  if(swiping)return;
+  var x=e.clientX,w=window.innerWidth;
+  if(x<w*.3)prevPage();else nextPage();
 });
 
-// Keyboard
+// ── keyboard ──
 document.addEventListener('keydown',function(e){
-  if(e.key=='ArrowRight')go(1);if(e.key=='ArrowLeft')go(-1);
-  if(e.key=='ArrowDown')load(cur+1);if(e.key=='ArrowUp')load(cur-1);
+  if(e.key=='ArrowRight')nextPage();
+  if(e.key=='ArrowLeft')prevPage();
+  if(e.key=='ArrowUp')openChapter(ci-1);
+  if(e.key=='ArrowDown')openChapter(ci+1);
 });
 
-function sel(i){load(i);closeSide()}
-function openSide(){
-  document.getElementById('side').classList.add('open');
-  document.getElementById('mask').classList.add('show');
+// ── sidebar ──
+function buildList(){
+  var l=document.getElementById('lst');
+  for(var i=0;i<BOOK.length;i++){
+    var d=document.createElement('div');
+    d.className='it';d.textContent=BOOK[i].title;
+    d.onclick=(function(idx){return function(){
+      openChapter(idx);side(0);
+    }})(i);
+    l.appendChild(d);
+  }
 }
-function closeSide(){
-  document.getElementById('side').classList.remove('open');
-  document.getElementById('mask').classList.remove('show');
+function side(on){
+  document.getElementById('sdb').className=on?'on':'';
+  document.getElementById('ovl').className=on?'on':'';
+  if(on){
+    // scroll to active
+    var act=document.querySelector('#sdb .it.act');
+    if(act)setTimeout(function(){act.scrollIntoView({block:'center'})},300);
+    document.getElementById('sch').value='';
+    sfilter();
+  }
 }
-function filter(){
+function sfilter(){
   var q=document.getElementById('sch').value.trim();
-  var its=document.querySelectorAll('#side .it');
-  for(var i=0;i<its.length;i++)
-    its[i].style.display=q&&its[i].textContent.indexOf(q)<0?'none':'';
+  var its=document.querySelectorAll('#sdb .it');
+  for(var i=0;i<its.length;i++)its[i].style.display=q&&its[i].textContent.indexOf(q)<0?'none':'';
 }
+
+// ── theme ──
 function theme(){
-  var t=(parseInt(localStorage.getItem('gr_t')||'0')+1)%3;
-  localStorage.setItem('gr_t',t);
+  var t=(parseInt(localStorage.getItem('gr_th')||'0')+1)%3;
+  localStorage.setItem('gr_th',t);
   document.body.className=['','night','sepia'][t];
 }
-function fs(d){
-  sz=Math.min(30,Math.max(12,sz+d));
-  document.documentElement.style.setProperty('--sz',sz+'px');
-  localStorage.setItem('gr_f',sz);
+
+// ── font size ──
+function fontSz(d){
+  fsz=Math.min(30,Math.max(12,fsz+d));
+  localStorage.setItem('gr_fs',fsz);
+  document.documentElement.style.setProperty('--sz',fsz+'px');
   setTimeout(function(){
-    ph=document.getElementById('reader').clientHeight;
-    tot=Math.max(1,Math.ceil(document.getElementById('content').scrollHeight/ph));
-    pg=Math.min(pg,tot-1);upd();
-  },100);
+    var v=document.getElementById('view');
+    var w=document.getElementById('pageW');
+    ph=v.clientHeight;
+    var newPn=Math.max(1,Math.ceil(w.scrollHeight/ph));
+    if(pi>=newPn)pi=newPn-1;
+    pn=newPn;
+    showPage();
+  },120);
 }
-rd();
 </script>
 </body>
 </html>
