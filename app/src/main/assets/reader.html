@@ -3,20 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>蛊真人</title>
+<title>小说</title>
 <style>
-:root{
-  --bg:#f5f1e8;--text:#2c2c2c;--accent:#8b5a2b;--bar-bg:rgba(245,241,232,.95);
-  --card:#faf6ef;--divider:#d8cfba;--dim:#8c8c8c;--fs:19px;--lh:2.0;
-}
-body.night{
-  --bg:#1a1a1a;--text:#c8c3b8;--bar-bg:rgba(26,26,26,.95);
-  --card:#242424;--divider:#333;--dim:#666;
-}
-body.sepia{
-  --bg:#efe0c0;--text:#4a3520;--bar-bg:rgba(239,224,192,.95);
-  --card:#f5e8cc;--divider:#c8b080;--accent:#6b4218;
-}
+:root{--bg:#f5f1e8;--text:#2c2c2c;--accent:#8b5a2b;--card:#faf6ef;--divider:#d8cfba;--dim:#999}
+body.night{--bg:#1a1a1a;--text:#c8c3b8;--card:#242424;--divider:#333}
+body.sepia{--bg:#efe0c0;--text:#4a3520;--card:#f5e8cc;--divider:#c8b080;--accent:#6b4218}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
   font-family:"Noto Serif SC","STSong","SimSun",serif;
@@ -26,56 +17,52 @@ body{
   transition:background .4s,color .4s;
 }
 
+/* Content - scroll-based pagination */
+#scrollView{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  overflow:hidden;
+}
+#contentWrap{
+  width:100%;max-width:740px;margin:0 auto;
+  padding:env(safe-area-inset-top,20px) 20px 40px 20px;
+  position:relative;transition:transform .25s ease
+}
+#contentWrap p{
+  font-size:18px;line-height:2.0;text-indent:2em;
+  margin-bottom:.4em;text-align:justify
+}
+
+/* Page indicator */
+#pgInfo{
+  position:fixed;bottom:12px;left:50%;transform:translateX(-50%);
+  font-size:11px;color:var(--dim);z-index:5;
+  pointer-events:none;background:var(--bg);padding:2px 12px;
+  border-radius:10px;opacity:.7
+}
+#pgBar{
+  position:fixed;bottom:0;left:0;right:0;height:3px;z-index:5;
+  background:var(--divider)
+}
+#pgBar div{height:100%;background:var(--accent);transition:width .25s}
+
 /* Top bar */
 #topbar{
   position:fixed;top:0;left:0;right:0;z-index:10;
-  background:var(--bar-bg);backdrop-filter:blur(8px);
-  padding:10px 16px;display:flex;align-items:center;gap:8px;
+  background:rgba(245,241,232,.92);backdrop-filter:blur(8px);
+  padding:12px 16px;display:flex;align-items:center;gap:8px;
   border-bottom:1px solid var(--divider);
-  transform:translateY(-100%);transition:transform .25s;
+  transform:translateY(-100%);transition:transform .2s
 }
 #topbar.show{transform:translateY(0)}
 #topbar .ttl{flex:1;font-size:14px;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#topbar button{
+#topbar button,.toggleBtn{
   padding:6px 12px;border:1px solid var(--divider);border-radius:6px;
-  background:var(--bg);color:var(--text);font-size:13px;font-family:inherit;
-  cursor:pointer;white-space:nowrap
+  background:var(--bg);color:var(--text);font-size:13px;font-family:inherit
 }
 
-/* Page progress bar */
-#pgbar{
-  position:fixed;bottom:0;left:0;right:0;height:3px;z-index:10;background:var(--divider)
-}
-#pgbar div{height:100%;background:var(--accent);transition:width .3s}
-
-/* Content area */
-#reader{
-  position:fixed;top:0;left:0;right:0;bottom:0;
-  padding:env(safe-area-inset-top) 20px 20px 20px;
-  display:flex;align-items:center;justify-content:center;
-  overflow:hidden
-}
-#pages{
-  width:100%;max-width:720px;height:100%;
-  position:relative;cursor:pointer
-}
-.page{
-  position:absolute;top:0;left:0;right:0;
-  height:100%;padding:40px 0 60px;
-  overflow:hidden;opacity:0;
-  transition:opacity .2s
-}
-.page.active{opacity:1}
-.page p{
-  font-size:var(--fs);line-height:var(--lh);
-  text-indent:2em;margin-bottom:.5em;text-align:justify
-}
-#pg-indicator{
-  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-  font-size:11px;color:var(--dim);z-index:5;pointer-events:none
-}
-
-/* Chapter list sidebar */
+/* Sidebar */
+#overlay{position:fixed;inset:0;z-index:19;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:opacity .3s}
+#overlay.show{opacity:1;pointer-events:auto}
 #sidebar{
   position:fixed;top:0;left:0;bottom:0;width:280px;z-index:20;
   background:var(--bg);border-right:1px solid var(--divider);
@@ -84,279 +71,192 @@ body{
 }
 #sidebar.open{transform:translateX(0)}
 #sidebar h3{font-size:15px;color:var(--accent);padding:16px;border-bottom:1px solid var(--divider)}
-#sidebar .searchbox{padding:8px 12px;border-bottom:1px solid var(--divider)}
-#sidebar .searchbox input{
-  width:100%;padding:8px;border:1px solid var(--divider);border-radius:6px;
-  font-size:13px;outline:none;background:var(--card);color:var(--text)
-}
-#sidebar .list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-#sidebar .item{
-  padding:10px 16px;font-size:14px;border-bottom:1px solid var(--divider);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer
-}
+#sidebar input{width:100%;padding:8px;margin:8px 12px;border:1px solid var(--divider);border-radius:6px;font-size:13px;background:var(--card);color:var(--text);font-family:inherit}
+#sidebar .list{flex:1;overflow-y:auto}
+#sidebar .item{padding:10px 16px;font-size:14px;border-bottom:1px solid var(--divider);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 #sidebar .item.active{font-weight:bold;color:var(--accent);background:var(--card)}
 
-/* Overlay behind sidebar */
-#overlay{
-  position:fixed;inset:0;z-index:19;background:rgba(0,0,0,.4);
-  opacity:0;pointer-events:none;transition:opacity .3s
-}
-#overlay.show{opacity:1;pointer-events:auto}
-
-/* Bottom controls */
-#bottombar{
-  position:fixed;bottom:0;left:0;right:0;z-index:10;
-  background:var(--bar-bg);backdrop-filter:blur(8px);
-  padding:10px 16px;display:flex;align-items:center;justify-content:center;gap:12px;
-  border-top:1px solid var(--divider);
-  transform:translateY(100%);transition:transform .25s
-}
-#bottombar.show{transform:translateY(0)}
-#bottombar button{
-  padding:8px 16px;border:1px solid var(--divider);border-radius:8px;
-  background:var(--bg);color:var(--text);font-size:14px;font-family:inherit
-}
-
 /* Loading */
-.loader{
-  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:16px;color:var(--dim);z-index:100;background:var(--bg)
-}
+.loader{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--dim);z-index:100;background:var(--bg)}
 </style>
 </head>
 <body>
 <div class="loader" id="loader">载入中…</div>
 
 <div id="topbar">
-  <button onclick="showSidebar()">☰</button>
+  <button onclick="openSidebar()">☰</button>
   <span class="ttl" id="ttl">蛊真人</span>
   <button onclick="cycleTheme()" id="themeBtn">🌙</button>
-  <button id="fsminus" onclick="chFs(-1)">A−</button>
-  <button id="fsplus" onclick="chFs(1)">A+</button>
+  <button onclick="chFs(-1)">A−</button>
+  <button onclick="chFs(1)">A+</button>
 </div>
 
-<div id="reader">
-  <div id="pages" onclick="onTap(event)"></div>
+<div id="scrollView" ontouchstart="ts(event)" ontouchend="te(event)" onclick="tap(event)">
+  <div id="contentWrap"></div>
 </div>
-<div id="pgbar"><div></div></div>
+<div id="pgBar"><div></div></div>
+<div id="pgInfo">1/1</div>
 
-<div id="bottombar">
-  <button onclick="goPage(-1)">◀</button>
-  <button onclick="showSidebar()" style="min-width:80px" id="pgbtn">1/1</button>
-  <button onclick="goPage(1)">▶</button>
-</div>
-
-<div id="overlay" onclick="hideSidebar()"></div>
+<div id="overlay" onclick="closeSidebar()"></div>
 <div id="sidebar">
   <h3>📚 目录</h3>
-  <div class="searchbox"><input id="search" placeholder="搜索章节…" oninput="filterCh()"></div>
+  <input id="search" placeholder="搜索章节…" oninput="filterCh()">
   <div class="list" id="list"></div>
 </div>
 
 <script>
-var DATA=[],curr=0,fsize=19,pages=[],pageIdx=0,theme=0;
+var DATA=[],curr=0,fsize=18,pageH=0,pageN=0,pageI=0,barVisible=false;
 
 function onDataReady(){
   DATA=window.ANDROID_CHAPTERS_DATA.chapters;
-  renderList();
+  buildList();
   var s=parseInt(localStorage.getItem('gr_prog')||'0');
-  selectChapter(s);
+  loadChapter(s);
   var t=parseInt(localStorage.getItem('gr_theme')||'0');
   if(t)setTheme(t);
-  var f=parseInt(localStorage.getItem('gr_fs')||'19');
-  if(f)fsize=f;document.documentElement.style.setProperty('--fs',fsize+'px');
+  var f=parseInt(localStorage.getItem('gr_fs')||'18');
+  if(f>0){fsize=f;applyFs()}
   document.getElementById('loader').style.display='none';
 }
 
-// Pagination
-function paginate(chapter){
-  var el=document.getElementById('pages');
-  var html='';
-  var ps=chapter.content.split('\n').filter(function(l){return l.trim();});
-  html=ps.map(function(p){return '<p>'+p+'</p>';}).join('');
+// Pagination: simple scroll-based approach
+// Each "page" = scrollView height
+function buildPages(text){
+  var wrap=document.getElementById('contentWrap');
+  var ps=text.split('\n').filter(function(l){return l.trim();});
+  var h='';
+  ps.forEach(function(p){h+='<p>'+p+'</p>';});
+  wrap.innerHTML=h;
   
-  // Build a hidden element to measure
-  var measure=document.createElement('div');
-  measure.style.cssText='position:absolute;visibility:hidden;width:'+el.clientWidth+'px;font-size:var(--fs);line-height:var(--lh);font-family:inherit;padding:40px 0 60px';
-  measure.innerHTML=html;
-  document.body.appendChild(measure);
-  
-  var pageH=el.clientHeight;
-  var paras=measure.querySelectorAll('p');
-  pages=[];
-  var curPage='';
-  measure.innerHTML='';
-  
-  paras.forEach(function(p){
-    var clone=p.cloneNode(true);
-    measure.appendChild(clone);
-    if(measure.scrollHeight>pageH){
-      // Overflow: finalize current page and start new
-      measure.removeChild(clone);
-      if(curPage)pages.push(curPage);
-      curPage='';
-      measure.innerHTML='';
-      measure.appendChild(p.cloneNode(true));
-      // If single paragraph is taller than page, split it
-      while(measure.scrollHeight>pageH){
-        var txt=p.textContent;
-        var half=Math.floor(txt.length/2);
-        var p1=document.createElement('p');
-        p1.textContent=txt.substring(0,half);
-        measure.innerHTML='';
-        measure.appendChild(p1);
-        if(measure.scrollHeight>pageH){
-          p1.textContent=txt.substring(0,Math.floor(half/2));
-          measure.innerHTML='';
-          measure.appendChild(p1);
-        }
-        pages.push('<p>'+p1.textContent+'</p>');
-        p=document.createElement('p');
-        p.textContent=txt.substring(p1.textContent.length);
-        measure.innerHTML='';
-        measure.appendChild(p);
-      }
-      if(p.textContent.trim())curPage='<p>'+p.textContent+'</p>';
-    }else{
-      if(curPage)curPage+=p.outerHTML;
-      else curPage=p.outerHTML;
-    }
-  });
-  if(curPage)pages.push(curPage);
-  if(pages.length===0)pages.push(html);
-  
-  document.body.removeChild(measure);
-  pageIdx=0;
-  renderPage();
+  // Measure total height
+  var view=document.getElementById('scrollView');
+  pageH=view.clientHeight;
+  var totalH=wrap.scrollHeight;
+  pageN=Math.max(1,Math.ceil(totalH/pageH));
+  pageI=0;
+  gotoPage(0);
+  updatePgInfo();
 }
 
-function renderPage(){
-  var el=document.getElementById('pages');
-  var html='';
-  pages.forEach(function(p,i){
-    html+='<div class="page'+(i===pageIdx?' active':'')+'">'+p+'</div>';
-  });
-  el.innerHTML=html;
-  
-  // Progress
-  var pct=((pageIdx+1)/pages.length*100);
-  document.querySelector('#pgbar div').style.width=pct+'%';
-  document.getElementById('pgbtn').textContent=(pageIdx+1)+'/'+pages.length;
-  
-  // Current paragraph indicator
-  var ind=document.createElement('div');
-  ind.id='pg-indicator';
-  ind.textContent=(pageIdx+1)+' / '+pages.length;
-  el.appendChild(ind);
+function gotoPage(n){
+  pageI=Math.max(0,Math.min(pageN-1,n));
+  var wrap=document.getElementById('contentWrap');
+  wrap.style.transform='translateY('+(-pageI*pageH)+'px)';
+  updatePgInfo();
 }
 
-function goPage(dir){
-  var np=pageIdx+dir;
-  if(np<0||np>=pages.length)return;
-  pageIdx=np;
-  renderPage();
+function updatePgInfo(){
+  document.getElementById('pgInfo').textContent=(pageI+1)+'/'+pageN;
+  var pct=(pageI+1)/pageN*100;
+  document.querySelector('#pgBar div').style.width=pct+'%';
 }
 
-function onTap(e){
-  var x=e.clientX||e.touches[0].clientX;
-  var w=window.innerWidth;
-  var y=e.clientY||e.touches[0].clientY;
+// Input handling
+var tx=0,ty=0;
+function ts(e){tx=e.touches[0].clientX;ty=e.touches[0].clientY}
+function te(e){
+  var dx=e.changedTouches[0].clientX-tx;
+  var dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)<20&&Math.abs(dy)<20)return; // No swipe
+  
+  // Vertical in center = page turn, top/bottom = controls
+  var y=(e.changedTouches[0].clientY+ty)/2;
   var h=window.innerHeight;
-  
-  if(y<h*0.15||y>h*0.85){
-    toggleControls();
+  if(y<h*0.12||y>h*0.88){
+    toggleBar();
     return;
   }
-  if(x<w/3)goPage(-1);
-  else goPage(1);
-}
-
-// Swipe support
-var touchStartX=0,touchStartY=0;
-document.addEventListener('touchstart',function(e){
-  touchStartX=e.touches[0].clientX;
-  touchStartY=e.touches[0].clientY;
-});
-document.addEventListener('touchend',function(e){
-  var dx=e.changedTouches[0].clientX-touchStartX;
-  var dy=e.changedTouches[0].clientY-touchStartY;
-  if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)){
-    onTap({clientX:e.changedTouches[0].clientX,clientY:e.changedTouches[0].clientY});
+  if(Math.abs(dy)>Math.abs(dx)){
+    if(dy<-40)gotoPage(pageI+1); // Swipe up = next page
+    if(dy>40)gotoPage(pageI-1);  // Swipe down = prev page
   }
-});
-
-// Chapter navigation
-function renderList(){
-  var l=document.getElementById('list'),h='';
-  DATA.forEach(function(c,i){h+='<div class=item onclick=sel('+i+')>'+c.title+'</div>';});
-  l.innerHTML=h;
-}
-function selectChapter(i){
-  if(i<0||i>=DATA.length)return;curr=i;
-  document.getElementById('ttl').textContent=DATA[i].title;
-  document.title=DATA[i].title;
-  paginate(DATA[i]);
-  localStorage.setItem('gr_prog',i);
-  // Highlight
-  var items=document.querySelectorAll('#sidebar .item');
-  items.forEach(function(el,j){el.classList.toggle('active',j===i)});
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
-function sel(i){selectChapter(i)}
-
-// Sidebar
-function showSidebar(){
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-}
-function hideSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
 }
 
-// Search
-function filterCh(){
-  var q=document.getElementById('search').value.trim();
-  document.querySelectorAll('#sidebar .item').forEach(function(el){
-    el.style.display=q&&!el.textContent.includes(q)?'none':'';
-  });
-}
-
-// Controls toggle
-var controlsShown=false;
-function toggleControls(){
-  controlsShown=!controlsShown;
-  document.getElementById('topbar').classList.toggle('show',controlsShown);
-  document.getElementById('bottombar').classList.toggle('show',controlsShown);
-}
-
-// Theme
-function setTheme(t){
-  theme=t;
-  var cls=['','night','sepia'];
-  document.body.className=cls[t]||'';
-  var icons=['🌙','☀️','📜'];
-  document.getElementById('themeBtn').textContent=icons[t]||'🌙';
-  localStorage.setItem('gr_theme',t);
-}
-function cycleTheme(){setTheme((theme+1)%3)}
-
-// Font size
-function chFs(d){
-  fsize=Math.min(30,Math.max(12,fsize+d));
-  document.documentElement.style.setProperty('--fs',fsize+'px');
-  localStorage.setItem('gr_fs',fsize);
-  paginate(DATA[curr]);
+function tap(e){
+  var y=e.clientY,h=window.innerHeight;
+  if(y<h*0.12||y>h*0.88){toggleBar();return}
+  var x=e.clientX,w=window.innerWidth;
+  if(x<w/3)gotoPage(pageI-1);
+  else gotoPage(pageI+1);
 }
 
 // Keyboard
 document.addEventListener('keydown',function(e){
-  if(e.key==='ArrowLeft')goPage(-1);
-  if(e.key==='ArrowRight')goPage(1);
-  if(e.key==='ArrowUp')selectChapter(curr-1);
-  if(e.key==='ArrowDown')selectChapter(curr+1);
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')gotoPage(pageI+1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')gotoPage(pageI-1);
+  if(e.key==='PageDown')loadChapter(curr+1);
+  if(e.key==='PageUp')loadChapter(curr-1);
 });
+
+// Chapter
+function loadChapter(i){
+  if(i<0||i>=DATA.length)return;
+  curr=i;
+  var ch=DATA[i];
+  document.getElementById('ttl').textContent=ch.title;
+  document.title=ch.title;
+  buildPages(ch.content);
+  localStorage.setItem('gr_prog',i);
+  // Highlight sidebar
+  var items=document.querySelectorAll('#sidebar .item');
+  for(var j=0;j<items.length;j++)items[j].classList.toggle('active',j===i);
+}
+
+function nextChapter(){loadChapter(curr+1)}
+function prevChapter(){loadChapter(curr-1)}
+
+// Sidebar
+function buildList(){
+  var l=document.getElementById('list'),h='';
+  DATA.forEach(function(c,i){h+='<div class=item onclick=sel('+i+')>'+c.title+'</div>';});
+  l.innerHTML=h;
+}
+function sel(i){loadChapter(i);closeSidebar()}
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+function filterCh(){
+  var q=document.getElementById('search').value.trim();
+  var items=document.querySelectorAll('#sidebar .item');
+  for(var i=0;i<items.length;i++)
+    items[i].style.display=q&&items[i].textContent.indexOf(q)<0?'none':'';
+}
+
+// Theme
+function setTheme(t){
+  document.body.className=['','night','sepia'][t]||'';
+  document.getElementById('themeBtn').textContent=['🌙','☀️','📜'][t]||'🌙';
+  localStorage.setItem('gr_theme',t);
+}
+function cycleTheme(){
+  var t=parseInt(localStorage.getItem('gr_theme')||'0');
+  setTheme((t+1)%3);
+}
+
+// Font
+function applyFs(){
+  document.querySelectorAll('#contentWrap p').forEach(function(p){
+    p.style.fontSize=fsize+'px';
+  });
+}
+function chFs(d){
+  fsize=Math.min(30,Math.max(12,fsize+d));
+  applyFs();
+  localStorage.setItem('gr_fs',fsize);
+  // Rebuild pages with new font size
+  setTimeout(function(){buildPages(DATA[curr].content)},100);
+}
+
+// Controls toggle
+function toggleBar(){
+  var bar=document.getElementById('topbar');
+  bar.classList.toggle('show');
+}
 
 // Init
 if(window.ANDROID_CHAPTERS_DATA)onDataReady();
