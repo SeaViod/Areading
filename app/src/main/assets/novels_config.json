@@ -1,0 +1,11 @@
+{
+  "novels": [
+    {
+      "id": "guzhenren",
+      "title": "蛊真人",
+      "author": "蛊真人",
+      "chapters_file": "novels/guzhenren/chapters.json",
+      "cover_color": "#8b5a2b"
+    }
+  ]
+}
