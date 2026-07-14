@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:name=".ReaderApp"
         android:allowBackup="true"
         android:label="小说书架"
         android:supportsRtl="true"
@@ -13,17 +14,13 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="小说书架">
+            android:label="小说书架"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".ReaderActivity"
-            android:label="阅读"
-            android:configChanges="orientation|screenSize" />
 
     </application>
 </manifest>
