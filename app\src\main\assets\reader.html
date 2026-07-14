@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>小说</title>
+<style>
+:root{--bg:#f5f1e8;--tx:#2c2c2c;--ac:#8b5a2b;--dm:#9c9c9c}
+body.night{--bg:#1a1a1a;--tx:#c8c3b8;--ac:#c49a6c}
+body.sepia{--bg:#efe0c0;--tx:#4a3520;--ac:#6b4218}
+body{font-family:"Noto Serif SC","STSong","SimSun",serif;background:var(--bg);color:var(--tx);margin:0;padding:0;height:100vh;width:100vw;overflow:hidden;-webkit-user-select:none}
+*{-webkit-tap-highlight-color:transparent}
+
+#view{position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden}
+#pg{position:absolute;top:0;left:0;right:0;margin:0 auto;max-width:720px;padding:env(safe-area-inset-top,30px) 22px 52px;transition:transform .2s}
+#pg p{font-size:var(--sz,18px);line-height:2.05;text-indent:2em;margin-bottom:.35em;text-align:justify}
+
+#guide{pointer-events:none;position:fixed;inset:0;z-index:50;opacity:0;transition:opacity 1.5s}
+#guide.show{opacity:1}
+#guide s1,#guide s2{position:absolute;top:50%;transform:translateY(-50%);color:rgba(139,90,43,.2);font-size:40px;font-weight:bold}
+#guide s1{left:12%}#guide s2{right:12%}
+
+#info{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-size:12px;color:var(--dm);pointer-events:none}
+
+#head{position:fixed;top:0;left:0;right:0;z-index:10;padding:12px 14px;display:none;align-items:center;gap:8px;background:var(--bg);opacity:.95}
+#head.on{display:flex}
+#head .tt{flex:1;font-size:14px;font-weight:600;color:var(--ac);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#head button{border:1.5px solid var(--dm);border-radius:6px;background:transparent;color:var(--tx);font-size:13px;padding:5px 11px;font-family:inherit}
+
+#ovl{position:fixed;inset:0;z-index:19;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
+#ovl.on{opacity:1;pointer-events:auto}
+#sdb{position:fixed;top:0;left:0;bottom:0;width:286px;z-index:20;background:var(--bg);transform:translateX(-100%);transition:transform .25s;display:flex;flex-direction:column;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+#sdb.on{transform:translateX(0)}
+#sdb h3{padding:16px;font-size:15px;color:var(--ac);margin:0;border-bottom:1.5px solid var(--dm)}
+#sdb input{margin:10px 12px;padding:8px 10px;border:1.5px solid var(--dm);border-radius:6px;font-size:13px;background:transparent;color:var(--tx);font-family:inherit}
+#sdb .lst{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#sdb .it{padding:10px 16px;font-size:14px;border-bottom:.5px solid var(--dm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+#sdb .it.act{background:var(--ac);color:#fff;font-weight:600}
+
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99;background:var(--bg);flex-direction:column;gap:14px;font-size:14px;color:var(--dm)}
+#load .dot{width:22px;height:22px;border:2px solid var(--dm);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+#err{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99;background:var(--bg);flex-direction:column;gap:8px;font-size:14px;color:red;text-align:center;padding:40px}
+#err button{margin-top:12px;padding:8px 20px;border:1px solid red;border-radius:6px;background:transparent;color:red;font-size:14px}
+</style>
+</head>
+<body>
+
+<div id="load"><div class="dot"></div><span>打开中</span></div>
+<div id="err" style="display:none"><span id="errMsg">初始化失败</span><button onclick="location.reload()">重试</button></div>
+
+<div id="head">
+  <button onclick="side(1)">☰</button>
+  <span class="tt" id="chTitle">蛊真人</span>
+  <button onclick="theme()">🌙</button>
+  <button onclick="fsAdj(-1)">A−</button>
+  <button onclick="fsAdj(1)">A+</button>
+</div>
+
+<div id="view" onclick="onTap(event)">
+  <div id="pg"></div>
+</div>
+<div id="info">1·1</div>
+<div id="guide" class="show"><s1>←</s1><s2>→</s2></div>
+
+<div id="ovl" onclick="side(0)"></div>
+<div id="sdb">
+  <h3>📖 目录</h3>
+  <input id="sch" placeholder="搜索章节…" oninput="sfilter()">
+  <div class="lst" id="lst"></div>
+</div>
+
+<script>
+var total=0, curr=0, fsz=18, ph=0, pn=0, pi=0;
+var headShown=false, tx=0;
+
+// Init
+function init(){
+  total=0;
+  try{ total=Android.getChapterCount(); }catch(e){
+    showErr('无法获取章节目录: '+e.message);
+    return;
+  }
+  if(total<=0){showErr('未找到任何章节');return;}
+  buildList();
+  document.getElementById('load').style.display='none';
+  // Restore state
+  var s=localStorage.getItem('gr_ci');curr=s?parseInt(s):0;
+  var t=localStorage.getItem('gr_th');if(t)document.body.className=['','night','sepia'][parseInt(t)];
+  var f=localStorage.getItem('gr_fs');if(f){fsz=parseInt(f);document.documentElement.style.setProperty('--sz',fsz+'px')}
+  loadChapter(curr);
+  setTimeout(function(){document.getElementById('guide').classList.remove('show')},2000);
+}
+
+function showErr(m){
+  document.getElementById('load').style.display='none';
+  document.getElementById('err').style.display='flex';
+  document.getElementById('errMsg').textContent=m;
+}
+
+// Chapter loading - lazy
+function loadChapter(i){
+  if(i<0||i>=total)return;
+  curr=i;localStorage.setItem('gr_ci',i);
+  document.getElementById('chTitle').textContent=Android.getChapterTitle(i);
+  document.title=Android.getChapterTitle(i);
+  // Mark list
+  var its=document.querySelectorAll('#sdb .it');
+  for(var j=0;j<its.length;j++)its[j].className='it'+(j===i?' act':'');
+  // Get content
+  var content='';
+  try{ content=Android.getChapterContent(i); }catch(e){content='加载失败';}
+  var ps=content.split('\n').filter(function(l){return l.trim()});
+  var h='';for(var k=0;k<ps.length;k++)h+='<p>'+ps[k]+'</p>';
+  var w=document.getElementById('pg');
+  w.innerHTML=h;w.style.transform='translateY(0)';
+  // Measure
+  var v=document.getElementById('view');
+  ph=v.clientHeight;
+  pn=Math.max(1,Math.ceil(w.scrollHeight/ph));
+  pi=0;updatePg();
+}
+
+function updatePg(){
+  document.getElementById('pg').style.transform='translateY('+(-pi*ph)+'px)';
+  document.getElementById('info').textContent=(pi+1)+'·'+pn;
+}
+
+function nextPg(){if(pi+1<pn){pi++;updatePg()}else if(curr+1<total)loadChapter(curr+1)}
+function prevPg(){if(pi>0){pi--;updatePg()}else if(curr>0)loadChapter(curr-1)}
+
+// List
+function buildList(){
+  var l=document.getElementById('lst');
+  for(var i=0;i<total;i++){
+    var d=document.createElement('div');d.className='it';
+    d.textContent=Android.getChapterTitle(i);
+    d.onclick=(function(idx){return function(){loadChapter(idx);side(0)}})(i);
+    l.appendChild(d);
+  }
+}
+
+// Touch
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX});
+document.addEventListener('touchend',function(e){
+  var dx=e.changedTouches[0].clientX-tx;
+  var y=e.changedTouches[0].clientY;
+  if(Math.abs(dx)<10&&(y<window.innerHeight*.08||y>window.innerHeight*.92)){headShown=!headShown;document.getElementById('head').className=headShown?'on':'';return}
+  if(Math.abs(dx)>35){if(dx<0)nextPg();else prevPg();return}
+});
+function onTap(e){
+  var x=e.clientX,w=window.innerWidth;
+  if(x<w*.3)prevPg();else nextPg();
+}
+
+// Keyboard
+document.addEventListener('keydown',function(e){
+  if(e.key=='ArrowRight')nextPg();if(e.key=='ArrowLeft')prevPg();
+  if(e.key=='ArrowDown')loadChapter(curr+1);if(e.key=='ArrowUp')loadChapter(curr-1);
+});
+
+// Sidebar
+function side(on){
+  document.getElementById('sdb').className=on?'on':'';
+  document.getElementById('ovl').className=on?'on':'';
+  if(on){var a=document.querySelector('#sdb .it.act');if(a)setTimeout(function(){a.scrollIntoView({block:'center'})},300);document.getElementById('sch').value='';sfilter()}
+}
+function sfilter(){
+  var q=document.getElementById('sch').value.trim();
+  var its=document.querySelectorAll('#sdb .it');
+  for(var i=0;i<its.length;i++)its[i].style.display=q&&its[i].textContent.indexOf(q)<0?'none':'';
+}
+
+// Theme
+function theme(){
+  var t=(parseInt(localStorage.getItem('gr_th')||'0')+1)%3;
+  localStorage.setItem('gr_th',t);document.body.className=['','night','sepia'][t];
+}
+function fsAdj(d){
+  fsz=Math.min(30,Math.max(12,fsz+d));
+  localStorage.setItem('gr_fs',fsz);document.documentElement.style.setProperty('--sz',fsz+'px');
+  setTimeout(function(){
+    var v=document.getElementById('view');ph=v.clientHeight;
+    var w=document.getElementById('pg');pn=Math.max(1,Math.ceil(w.scrollHeight/ph));
+    updatePg();
+  },120);
+}
+init();
+</script>
+</body>
+</html>
