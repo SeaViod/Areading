@@ -44,7 +44,7 @@ body{font-family:"Noto Serif SC","STSong","SimSun",serif;background:var(--bg);co
 var CH=[],ci=0,fs=18,ph=0,pn=0,pi=0,hd=false,tx0=0;
 async function init(){
  try{
-  var r=await fetch('chapters.json');var d=await r.json();CH=d.chapters;
+  var d=JSON.parse(document.getElementById('dataScript').textContent);CH=d.chapters;
   if(!CH.length){die('没有章节');return}
   buildList();
   var s=localStorage.getItem('gr_ci');ci=s?parseInt(s):0;
