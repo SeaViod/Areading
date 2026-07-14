@@ -3,20 +3,18 @@ package com.reader.guzhenren;
 import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.View;
-import android.webkit.WebChromeClient;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.core.view.WindowCompat;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class ReaderActivity extends AppCompatActivity {
 
-    private WebView webView;
-    private String chaptersJson;
+    private JSONArray chapters;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -28,25 +26,25 @@ public class ReaderActivity extends AppCompatActivity {
 
         setTitle(novelTitle != null ? novelTitle : "阅读");
 
-        // Full screen with system bars overlay
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().setStatusBarColor(Color.TRANSPARENT);
         getWindow().setNavigationBarColor(Color.TRANSPARENT);
         new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView())
             .setAppearanceLightStatusBars(true);
 
-        // Load chapters data from assets
         try {
             InputStream is = getAssets().open(chaptersFile);
             byte[] buf = new byte[is.available()];
             is.read(buf);
             is.close();
-            chaptersJson = new String(buf, StandardCharsets.UTF_8);
+            String json = new String(buf, "UTF-8");
+            JSONObject root = new JSONObject(json);
+            chapters = root.getJSONArray("chapters");
         } catch (Exception e) {
-            chaptersJson = "{\"total\":0,\"chapters\":[]}";
+            chapters = new JSONArray();
         }
 
-        webView = new WebView(this);
+        WebView webView = new WebView(this);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setAllowFileAccess(true);
         webView.getSettings().setDomStorageEnabled(true);
@@ -54,21 +52,34 @@ public class ReaderActivity extends AppCompatActivity {
         webView.getSettings().setUseWideViewPort(true);
         webView.getSettings().setLoadWithOverviewMode(true);
         webView.setBackgroundColor(Color.parseColor("#f5f1e8"));
-        
-        // Hide scrollbar
         webView.setVerticalScrollBarEnabled(false);
         webView.setHorizontalScrollBarEnabled(false);
 
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                String js = "window.ANDROID_CHAPTERS_DATA = " + chaptersJson + ";"
-                    + "if (typeof onDataReady === 'function') onDataReady();";
-                view.evaluateJavascript(js, null);
-            }
-        });
-
+        webView.addJavascriptInterface(this, "Android");
         webView.loadUrl("file:///android_asset/reader.html");
         setContentView(webView);
+    }
+
+    @JavascriptInterface
+    public int getChapterCount() {
+        return chapters.length();
+    }
+
+    @JavascriptInterface
+    public String getChapterTitle(int index) {
+        try {
+            return chapters.getJSONObject(index).getString("title");
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    @JavascriptInterface
+    public String getChapterContent(int index) {
+        try {
+            return chapters.getJSONObject(index).getString("content");
+        } catch (Exception e) {
+            return "";
+        }
     }
 }
