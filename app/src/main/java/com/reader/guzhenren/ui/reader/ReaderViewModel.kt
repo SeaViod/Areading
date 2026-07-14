@@ -5,62 +5,44 @@ import android.text.TextPaint
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.reader.guzhenren.data.Chapter
-import com.reader.guzhenren.data.Novel
 import com.reader.guzhenren.data.NovelRepository
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class ReaderViewModel @Inject constructor(
+class ReaderViewModel(
     private val repository: NovelRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ReaderUiState>(ReaderUiState.Loading)
     val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
 
-    private var novel: Novel? = null
     private var chapters: List<Chapter> = emptyList()
     private var chapterIdx: Int = 0
     private var pageIdx: Int = 0
     private var pages: List<String> = emptyList()
-
-    private var pageWidth: Int = 720
-    private var pageHeight: Int = 1200
-    var fontSize: Float = 18f
-        private set
+    private var pageW: Int = 720
+    private var pageH: Int = 1200
+    var fontSize: Float = 18f; private set
 
     fun loadNovel(chaptersFile: String) {
         viewModelScope.launch {
             _uiState.value = ReaderUiState.Loading
             try {
-                novel = repository.loadNovels().find { it.chaptersFile == chaptersFile }
-                    ?: throw Exception("未找到小说")
-                chapters = repository.loadChapters(novel!!)
-                if (chapters.isEmpty()) {
-                    _uiState.value = ReaderUiState.Error("没有章节")
-                    return@launch
-                }
-                chapterIdx = 0; pageIdx = 0
-                paginateAndUpdate()
+                val novels = repository.loadNovels()
+                val novel = novels.find { it.chaptersFile == chaptersFile } ?: throw Exception("未找到小说")
+                chapters = repository.loadChapters(novel)
+                if (chapters.isEmpty()) { _uiState.value = ReaderUiState.Error("没有章节"); return@launch }
+                chapterIdx = 0; pageIdx = 0; paginate()
             } catch (e: Exception) {
                 _uiState.value = ReaderUiState.Error(e.message ?: "加载失败")
             }
         }
     }
 
-    fun updateLayout(w: Int, h: Int) {
-        pageWidth = w; pageHeight = h
-        paginateAndUpdate()
-    }
-
-    fun changeFont(delta: Int) {
-        fontSize = (fontSize + delta).coerceIn(12f, 30f)
-        paginateAndUpdate()
-    }
+    fun updateLayout(w: Int, h: Int) { pageW = w; pageH = h; paginate() }
+    fun changeFont(d: Int) { fontSize = (fontSize + d).coerceIn(12f, 30f); paginate() }
 
     fun cycleTheme(): Int {
         val cur = _uiState.value
@@ -71,89 +53,52 @@ class ReaderViewModel @Inject constructor(
     }
 
     fun nextPage(): Boolean {
-        if (pageIdx + 1 < pages.size) { pageIdx++; emitContent(); return true }
-        if (chapterIdx + 1 < chapters.size) {
-            chapterIdx++; pageIdx = 0; paginateAndUpdate(); return true
-        }
+        if (pageIdx + 1 < pages.size) { pageIdx++; emit(); return true }
+        if (chapterIdx + 1 < chapters.size) { chapterIdx++; pageIdx = 0; paginate(); return true }
         return false
     }
-
     fun prevPage(): Boolean {
-        if (pageIdx > 0) { pageIdx--; emitContent(); return true }
-        if (chapterIdx > 0) {
-            chapterIdx--
-            paginatePages()
-            pageIdx = (pages.size - 1).coerceAtLeast(0)
-            emitContent()
-            return true
-        }
+        if (pageIdx > 0) { pageIdx--; emit(); return true }
+        if (chapterIdx > 0) { chapterIdx--; paginate(); pageIdx = (pages.size - 1).coerceAtLeast(0); emit(); return true }
         return false
     }
 
-    fun selectChapter(idx: Int) {
-        if (idx < 0 || idx >= chapters.size) return
-        chapterIdx = idx; pageIdx = 0
-        paginateAndUpdate()
-    }
-
+    fun selectChapter(idx: Int) { if (idx in chapters.indices) { chapterIdx = idx; pageIdx = 0; paginate() } }
     fun getChapterList(): List<String> = chapters.map { it.title }
-    fun getCurrentChapterIdx(): Int = chapterIdx
+    fun getCurrentIdx(): Int = chapterIdx
 
-    private fun paginateAndUpdate() {
-        paginatePages()
-        emitContent()
-    }
-
-    private fun paginatePages() {
+    private fun paginate() {
         val ch = chapters.getOrNull(chapterIdx) ?: return
-        pages = paginateText(ch.content, pageWidth, pageHeight, fontSize)
+        pages = paginateText(ch.content, pageW, pageH, fontSize)
+        emit()
     }
 
-    private fun emitContent() {
-        val ch = chapters.getOrNull(chapterIdx)
-        val cur = _uiState.value
-        val theme = if (cur is ReaderUiState.Content) cur.theme else 0
+    private fun emit() {
+        val ch = chapters.getOrNull(chapterIdx); val cur = _uiState.value
         _uiState.value = ReaderUiState.Content(
-            novelTitle = novel?.title ?: "",
             chapterTitle = ch?.title ?: "",
             pageContent = pages.getOrNull(pageIdx) ?: "",
-            chapterIndex = chapterIdx,
-            chapterCount = chapters.size,
-            pageIndex = pageIdx,
-            totalPages = pages.size,
-            theme = theme
+            chapterIndex = chapterIdx, chapterCount = chapters.size,
+            pageIndex = pageIdx, totalPages = pages.size,
+            theme = (cur as? ReaderUiState.Content)?.theme ?: 0
         )
     }
 
     companion object {
-        fun paginateText(text: String, width: Int, height: Int, fontSize: Float): List<String> {
-            if (width <= 0 || height <= 0) return listOf(text)
-
-            val paint = TextPaint().apply {
-                this.textSize = fontSize * 2.5f
-                isAntiAlias = true
-            }
-
-            val paragraphs = text.split("\n").filter { it.isNotBlank() }
-            val full = paragraphs.joinToString("\n") { "　　$it" }
-
-            val layout = if (android.os.Build.VERSION.SDK_INT >= 23) {
-                StaticLayout.Builder.obtain(full, 0, full.length, paint, width)
-                    .setLineSpacing(fontSize * 0.3f, 1f)
-                    .build()
-            } else {
-                StaticLayout(full, paint, width, android.text.Layout.Alignment.ALIGN_NORMAL, 1.5f, 0f, false)
-            }
-
+        fun paginateText(text: String, w: Int, h: Int, fs: Float): List<String> {
+            if (w <= 0 || h <= 0) return listOf(text)
+            val paint = TextPaint().apply { textSize = fs * 2.5f; isAntiAlias = true }
+            val paras = text.split("\n").filter { it.isNotBlank() }
+            val full = paras.joinToString("\n") { "\u3000\u3000$it" }
+            val layout = StaticLayout.Builder.obtain(full, 0, full.length, paint, w)
+                .setLineSpacing(fs * 0.3f, 1f).build()
             val result = mutableListOf<String>()
             var line = 0
             while (line < layout.lineCount) {
-                val startOff = layout.getLineStart(line)
-                val startY = layout.getLineTop(line)
-                var end = line + 1
-                while (end < layout.lineCount && layout.getLineBottom(end) - startY <= height) end++
+                val startY = layout.getLineTop(line); var end = line + 1
+                while (end < layout.lineCount && layout.getLineBottom(end) - startY <= h) end++
                 val endOff = if (end < layout.lineCount) layout.getLineStart(end) else full.length
-                result.add(full.substring(startOff, endOff).trim())
+                result.add(full.substring(layout.getLineStart(line), endOff).trim())
                 line = end
             }
             return result.ifEmpty { listOf(full) }
@@ -165,13 +110,8 @@ sealed class ReaderUiState {
     object Loading : ReaderUiState()
     data class Error(val message: String) : ReaderUiState()
     data class Content(
-        val novelTitle: String,
-        val chapterTitle: String,
-        val pageContent: String,
-        val chapterIndex: Int,
-        val chapterCount: Int,
-        val pageIndex: Int,
-        val totalPages: Int,
-        val theme: Int = 0
+        val chapterTitle: String, val pageContent: String,
+        val chapterIndex: Int, val chapterCount: Int,
+        val pageIndex: Int, val totalPages: Int, val theme: Int = 0
     ) : ReaderUiState()
 }

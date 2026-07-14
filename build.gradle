@@ -1,18 +1,8 @@
 buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
+    repositories { google(); mavenCentral() }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.2.0'
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21'
-        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.50'
     }
 }
-
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
+allprojects { repositories { google(); mavenCentral() } }

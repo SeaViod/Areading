@@ -4,49 +4,55 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
-import androidx.navigation.NavType
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import androidx.compose.runtime.*
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.reader.guzhenren.data.Novel
+import com.reader.guzhenren.data.NovelRepository
 import com.reader.guzhenren.ui.library.LibraryScreen
+import com.reader.guzhenren.ui.library.LibraryViewModel
 import com.reader.guzhenren.ui.reader.ReaderScreen
-import dagger.hilt.android.AndroidEntryPoint
+import com.reader.guzhenren.ui.reader.ReaderViewModel
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val repo = NovelRepository(applicationContext)
         setContent {
-            ReaderNavHost()
+            ReaderApp(repo)
         }
     }
 }
 
 @Composable
-fun ReaderNavHost() {
-    val navController = rememberNavController()
+fun ReaderApp(repo: NovelRepository) {
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Library) }
+    var selectedNovel by remember { mutableStateOf<Novel?>(null) }
 
-    NavHost(navController = navController, startDestination = "library") {
-        composable("library") {
+    when (currentScreen) {
+        is Screen.Library -> {
             LibraryScreen(
                 onSelectNovel = { novel ->
-                    navController.navigate("reader/${novel.chaptersFile}")
-                }
+                    selectedNovel = novel
+                    currentScreen = Screen.Reader
+                },
+                viewModelFactory = { LibraryViewModel(repo) }
             )
         }
-        composable(
-            route = "reader/{chaptersFile}",
-            arguments = listOf(navArgument("chaptersFile") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val file = backStackEntry.arguments?.getString("chaptersFile") ?: ""
-            ReaderScreen(
-                chaptersFile = file,
-                onBack = { navController.popBackStack() }
-            )
+        is Screen.Reader -> {
+            selectedNovel?.let { novel ->
+                ReaderScreen(
+                    chaptersFile = novel.chaptersFile,
+                    onBack = { currentScreen = Screen.Library },
+                    viewModelFactory = { ReaderViewModel(repo) }
+                )
+            }
         }
     }
+}
+
+sealed class Screen {
+    data object Library : Screen()
+    data object Reader : Screen()
 }
